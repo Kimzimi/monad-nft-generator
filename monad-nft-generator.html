@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monad NFT Generator</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: #0f0820;
+            background-image: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(148, 107, 234, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(96, 165, 250, 0.2) 0%, transparent 50%);
+            min-height: 100vh;
+            color: white;
+            overflow-x: hidden;
+        }
+        
+        .header {
+            text-align: center;
+            padding: 2rem;
+            border-bottom: 1px solid rgba(148, 107, 234, 0.3);
+            background: rgba(15, 8, 32, 0.8);
+            backdrop-filter: blur(20px);
+        }
+        
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 1rem;
+        }
+        
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #946bea, #60a5fa);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transform: rotate(45deg);
+        }
+        
+        .logo-icon::before {
+            content: '';
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 4px;
+            transform: rotate(-45deg);
+        }
+        
+        .logo h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #946bea, #60a5fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 300;
+        }
+        
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            padding: 3rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: rgba(20, 15, 40, 0.8);
+            border: 1px solid rgba(148, 107, 234, 0.3);
+            border-radius: 20px;
+            padding: 2rem;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        .card h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: #946bea;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        #drawingCanvas {
+            width: 100%;
+            max-width: 400px;
+            height: 400px;
+            border: 2px solid #946bea;
+            border-radius: 15px;
+            background: #1a1332;
+            cursor: crosshair;
+            display: block;
+            margin: 0 auto 1.5rem;
+            box-shadow: 0 0 30px rgba(148, 107, 234, 0.3);
+        }
+        
+        .tools {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .tool-btn {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(148, 107, 234, 0.2);
+            color: white;
+            border: 1px solid rgba(148, 107, 234, 0.5);
+        }
+        
+        .tool-btn:hover {
+            background: rgba(148, 107, 234, 0.4);
+            transform: translateY(-2px);
+        }
+        
+        .tool-btn.active {
+            background: linear-gradient(135deg, #946bea, #60a5fa);
+            box-shadow: 0 4px 15px rgba(148, 107, 234, 0.4);
+        }
+        
+        .colors {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .color-btn {
+            width: 50px;
+            height: 50px;
+            border: 3px solid transparent;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .color-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .color-btn.active {
+            border-color: #946bea;
+            box-shadow: 0 0 20px rgba(148, 107, 234, 0.6);
+            transform: scale(1.1);
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .clear-btn {
+            background: rgba(239, 68, 68, 0.2);
+            color: white;
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            padding: 0.8rem 1.5rem;
+            font-size: 1rem;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .clear-btn:hover {
+            background: rgba(239, 68, 68, 0.4);
+            transform: translateY(-2px);
+        }
+        
+        #generateBtn {
+            background: linear-gradient(135deg, #946bea, #60a5fa);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(148, 107, 234, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        #generateBtn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(148, 107, 234, 0.6);
+        }
+        
+        #generateBtn:active {
+            transform: translateY(-1px);
+        }
+        
+        #generateBtn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+        
+        .nft-card {
+            background: rgba(26, 19, 50, 0.8);
+            border: 1px solid rgba(148, 107, 234, 0.3);
+            border-radius: 15px;
+            padding: 1rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .nft-card:hover {
+            transform: scale(1.02);
+            border-color: #946bea;
+            box-shadow: 0 10px 30px rgba(148, 107, 234, 0.3);
+        }
+        
+        .nft-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #946bea, #60a5fa, #946bea);
+        }
+        
+        .result-canvas {
+            width: 100%;
+            height: 200px;
+            border-radius: 10px;
+            background: #0f0820;
+            display: block;
+        }
+        
+        .nft-info {
+            margin-top: 0.5rem;
+            text-align: center;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .floating-elements {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .floating-element {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #946bea;
+            border-radius: 50%;
+            animation: float 8s infinite linear;
+        }
+        
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-10vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        .monad-traits {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .trait-tag {
+            background: rgba(148, 107, 234, 0.2);
+            border: 1px solid rgba(148, 107, 234, 0.5);
+            border-radius: 8px;
+            padding: 0.5rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #946bea;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                padding: 1.5rem;
+                gap: 2rem;
+            }
+            
+            .gallery {
+                grid-template-columns: 1fr;
+            }
+            
+            .logo h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-elements"></div>
+    
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon"></div>
+            <h1>MONAD</h1>
+        </div>
+        <p class="subtitle">NFT Character Generator • Create Unique Monad Mascots</p>
+    </header>
+    
+    <div class="container">
+        <div class="card">
+            <h2>🎨 Design Your Monad</h2>
+            <canvas id="drawingCanvas" width="400" height="400"></canvas>
+            
+            <div class="tools">
+                <button id="penBtn" class="tool-btn active">✏️ Pen</button>
+                <button id="eraserBtn" class="tool-btn">🧹 Eraser</button>
+            </div>
+            
+            <div class="colors">
+                <div class="color-btn active" style="background: #000000;" data-color="#000000"></div>
+                <div class="color-btn" style="background: #946bea;" data-color="#946bea"></div>
+                <div class="color-btn" style="background: #60a5fa;" data-color="#60a5fa"></div>
+                <div class="color-btn" style="background: #ec4899;" data-color="#ec4899"></div>
+                <div class="color-btn" style="background: #f59e0b;" data-color="#f59e0b"></div>
+                <div class="color-btn" style="background: #10b981;" data-color="#10b981"></div>
+            </div>
+            
+            <div class="action-buttons">
+                <button class="clear-btn" onclick="clearCanvas()">Clear Canvas</button>
+                <button id="generateBtn" onclick="generateMonadNFTs()">Generate Monad NFTs</button>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>🌟 Your Monad Collection</h2>
+            <div class="gallery">
+                <div class="nft-card">
+                    <canvas class="result-canvas" width="200" height="200"></canvas>
+                    <div class="nft-info">Monad #1</div>
+                </div>
+                <div class="nft-card">
+                    <canvas class="result-canvas" width="200" height="200"></canvas>
+                    <div class="nft-info">Monad #2</div>
+                </div>
+                <div class="nft-card">
+                    <canvas class="result-canvas" width="200" height="200"></canvas>
+                    <div class="nft-info">Monad #3</div>
+                </div>
+                <div class="nft-card">
+                    <canvas class="result-canvas" width="200" height="200"></canvas>
+                    <div class="nft-info">Monad #4</div>
+                </div>
+                <div class="nft-card">
+                    <canvas class="result-canvas" width="200" height="200"></canvas>
+                    <div class="nft-info">Monad #5</div>
+                </div>
+                <div class="nft-card">
+                    <canvas class="result-canvas" width="200" height="200"></canvas>
+                    <div class="nft-info">Monad #6</div>
+                </div>
+                <div class="nft-card">
+                    <canvas class="result-canvas" width="200" height="200"></canvas>
+                    <div class="nft-info">Monad #7</div>
+                </div>
+                <div class="nft-card">
+                    <canvas class="result-canvas" width="200" height="200"></canvas>
+                    <div class="nft-info">Monad #8</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Monad body types based on the reference images
+        const monadBodies = {
+            spike: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9Im1vbmFkR3JhZCIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzk0NmJlYSIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzYwNTJkOCIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxjaXJjbGUgY3g9IjUwIiBjeT0iNTAiIHI9IjQwIiBmaWxsPSJ1cmwoI21vbmFkR3JhZCkiIHN0cm9rZT0iIzRjNDBkNCIgc3Ryb2tlLXdpZHRoPSIzIi8+PHBhdGggZD0iTSAzMCAyMCBMIDM1IDEwIEwgNDAgMjAiIGZpbGw9IiM5NDZiZWEiIHN0cm9rZT0iIzRjNDBkNCIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTSA2MCAyMCBMIDY1IDEwIEwgNzAgMjAiIGZpbGw9IiM5NDZiZWEiIHN0cm9rZT0iIzRjNDBkNCIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTSA0NSAxNSBMIDUwIDUgTCA1NSAxNSIgZmlsbD0iIzk0NmJlYSIgc3Ryb2tlPSIjNGM0MGQ0IiBzdHJva2Utd2lkdGg9IjIiLz48L3N2Zz4=',
+            round: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9Im1vbmFkR3JhZDIiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiM5NDZiZWEiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiM2MDUyZDgiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0NSIgZmlsbD0idXJsKCNtb25hZEdyYWQyKSIgc3Ryb2tlPSIjNGM0MGQ0IiBzdHJva2Utd2lkdGg9IjMiLz48L3N2Zz4=',
+            fluffy: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9Im1vbmFkR3JhZDMiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiM5NDZiZWEiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiM2MDUyZDgiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0MCIgZmlsbD0idXJsKCNtb25hZEdyYWQzKSIgc3Ryb2tlPSIjNGM0MGQ0IiBzdHJva2Utd2lkdGg9IjMiLz48Y2lyY2xlIGN4PSIzMCIgY3k9IjMwIiByPSI4IiBmaWxsPSIjOTQ2YmVhIiBvcGFjaXR5PSIwLjciLz48Y2lyY2xlIGN4PSI3MCIgY3k9IjM1IiByPSI2IiBmaWxsPSIjOTQ2YmVhIiBvcGFjaXR5PSIwLjciLz48Y2lyY2xlIGN4PSI0MCIgY3k9IjI1IiByPSI1IiBmaWxsPSIjOTQ2YmVhIiBvcGFjaXR5PSIwLjciLz48Y2lyY2xlIGN4PSI2MCIgY3k9IjI4IiByPSI3IiBmaWxsPSIjOTQ2YmVhIiBvcGFjaXR5PSIwLjciLz48L3N2Zz4=',
+            blob: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9Im1vbmFkR3JhZDQiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiM5NDZiZWEiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiM2MDUyZDgiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cGF0aCBkPSJNIDUwIDEwIEMgNzAgMTUgODUgMzAgODUgNTAgQyA4NSA3MCA3MCA4NSA1MCA4NSBDIDMwIDg1IDE1IDcwIDE1IDUwIEMgMTUgMzAgMzAgMTUgNTAgMTAiIGZpbGw9InVybCgjbW9uYWRHcmFkNCkiIHN0cm9rZT0iIzRjNDBkNCIgc3Ryb2tlLXdpZHRoPSIzIi8+PC9zdmc+'
+        };
+
+        const monadAccessories = {
+            hat: { 
+                src: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgNDAiPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iaGF0R3JhZCIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzYwYTVmYSIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzM3NzNmOSIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHg9IjEwIiB5PSIzMCIgd2lkdGg9IjgwIiBoZWlnaHQ9IjgiIGZpbGw9InVybCgjaGF0R3JhZCkiIHJ4PSI0Ii8+PHJlY3QgeD0iMzAiIHk9IjEwIiB3aWR0aD0iNDAiIGhlaWdodD0iMjUiIGZpbGw9InVybCgjaGF0R3JhZCkiIHJ4PSI1Ii8+PC9zdmc+',
+                type: 'hat'
+            },
+            glasses: { 
+                src: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgNDAiPjxjaXJjbGUgY3g9IjI1IiBjeT0iMjAiIHI9IjE1IiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMikiIHN0cm9rZT0iIzZmNzg5ZiIgc3Ryb2tlLXdpZHRoPSIzIi8+PGNpcmNsZSBjeD0iNzUiIGN5PSIyMCIgcj0iMTUiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4yKSIgc3Ryb2tlPSIjNmY3ODlmIiBzdHJva2Utd2lkdGg9IjMiLz48bGluZSB4MT0iNDAiIHkxPSIyMCIgeDI9IjYwIiB5Mj0iMjAiIHN0cm9rZT0iIzZmNzg5ZiIgc3Ryb2tlLXdpZHRoPSIzIi8+PC9zdmc+',
+                type: 'glasses'
+            },
+            chain: { 
+                src: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgNjAiPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iY2hhaW5HcmFkIiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIxMDAlIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjZmZkNzAwIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjZmZiMDAwIi8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PGNpcmNsZSBjeD0iNTAiIGN5PSI0NSIgcj0iMTIiIGZpbGw9InVybCgjY2hhaW5HcmFkKSIgc3Ryb2tlPSIjZGQ5MTAzIiBzdHJva2Utd2lkdGg9IjIiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjQ1IiByPSI2IiBmaWxsPSIjOTQ2YmVhIi8+PHBhdGggZD0iTSAzNSAzNSBRIDQyIDI1IDUwIDM1IFF0IDU4IDI1IDY1IDM1IiBzdHJva2U9InVybCgjY2hhaW5HcmFkKSIgc3Ryb2tlLXdpZHRoPSI0IiBmaWxsPSJub25lIi8+PC9zdmc+',
+                type: 'chain'
+            },
+            crown: { 
+                src: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgNDAiPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iY3Jvd25HcmFkIiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIxMDAlIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjZmZkNzAwIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjZmZiMDAwIi8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHBhdGggZD0iTSAxNSAzNSBMIDIwIDEwIEwgMzAgMjAgTCA1MCA1IEwgNzAgMjAgTCA4MCA5IEwgODUgMzUgWiIgZmlsbD0idXJsKCNjcm93bkdyYWQpIiBzdHJva2U9IiNkZDkxMDMiIHN0cm9rZS13aWR0aD0iMiIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iOCIgcj0iNCIgZmlsbD0iIzk0NmJlYSIvPjwvc3ZnPg==',
+                type: 'hat'
+            }
+        };
+
+        const monadExpressions = [
+            { name: 'happy', eyes: '⊙⊙', mouth: '‿', color: '#60a5fa' },
+            { name: 'cool', eyes: '●●', mouth: '―', color: '#946bea' },
+            { name: 'excited', eyes: '★★', mouth: '◡', color: '#ec4899' },
+            { name: 'sleepy', eyes: '‒‒', mouth: '～', color: '#6b7280' },
+            { name: 'wink', eyes: '⊙‒', mouth: '‿', color: '#f59e0b' },
+            { name: 'surprised', eyes: '○○', mouth: 'o', color: '#10b981' },
+            { name: 'grumpy', eyes: '◢◣', mouth: '︶', color: '#ef4444' },
+            { name: 'love', eyes: '♥♥', mouth: '◡', color: '#f97316' }
+        ];
+
+        // Drawing functionality
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        let currentTool = 'pen';
+        let currentColor = '#000000';
+        
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        // Tool selection
+        const penBtn = document.getElementById('penBtn');
+        const eraserBtn = document.getElementById('eraserBtn');
+
+        penBtn.addEventListener('click', () => {
+            currentTool = 'pen';
+            penBtn.classList.add('active');
+            eraserBtn.classList.remove('active');
+            canvas.style.cursor = 'crosshair';
+        });
+
+        eraserBtn.addEventListener('click', () => {
+            currentTool = 'eraser';
+            eraserBtn.classList.add('active');
+            penBtn.classList.remove('active');
+            canvas.style.cursor = 'grab';
+        });
+
+        // Color selection
+        const colorBtns = document.querySelectorAll('.color-btn');
+        colorBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (currentTool === 'pen') {
+                    currentColor = btn.dataset.color;
+                    colorBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                }
+            });
+        });
+
+        // Drawing functions
+        function startDrawing(e) {
+            e.preventDefault();
+            isDrawing = true;
+            ctx.beginPath();
+            const { x, y } = getMousePos(e);
+            ctx.moveTo(x, y);
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            e.preventDefault();
+            
+            const { x, y } = getMousePos(e);
+            
+            if (currentTool === 'pen') {
+                ctx.strokeStyle = currentColor;
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.lineWidth = 3;
+            } else if (currentTool === 'eraser') {
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.lineWidth = 20;
+            }
+
+            ctx.lineTo(x, y);
+            ctx.stroke();
+        }
+
+        function stopDrawing(e) {
+            e.preventDefault();
+            isDrawing = false;
+            ctx.beginPath();
+        }
+
+        function getMousePos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.clientX || e.touches[0].clientX;
+            const clientY = e.clientY || e.touches[0].clientY;
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+        
+        // Event listeners
+        canvas.addEventListener('touchstart', startDrawing, { passive: false });
+        canvas.addEventListener('touchmove', draw, { passive: false });
+        canvas.addEventListener('touchend', stopDrawing, { passive: false });
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // Image loading helper
+        function loadImage(src) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = () => reject(new Error('Failed to load image'));
+                img.src = src;
+            });
+        }
+
+        // Main NFT generation function
+        async function generateMonadNFTs() {
+            const generateBtn = document.getElementById('generateBtn');
+            generateBtn.disabled = true;
+            generateBtn.textContent = 'Generating...';
+
+            const resultCanvases = document.querySelectorAll('.result-canvas');
+            const bodyKeys = Object.keys(monadBodies);
+            const accessoryKeys = Object.keys(monadAccessories);
+            
+            // Create unique combinations
+            const combinations = [];
+            
+            for (let i = 0; i < 8; i++) {
+                const bodyType = bodyKeys[i % bodyKeys.length];
+                const expression = monadExpressions[i % monadExpressions.length];
+                
+                // Select accessories randomly but ensure variety
+                const selectedAccessories = [];
+                const numAccessories = Math.floor(Math.random() * 2) + 1; // 1-2 accessories
+                
+                for (let j = 0; j < numAccessories; j++) {
+                    const accessoryIndex = (i + j) % accessoryKeys.length;
+                    selectedAccessories.push(monadAccessories[accessoryKeys[accessoryIndex]]);
+                }
+                
+                combinations.push({
+                    bodyType,
+                    expression,
+                    accessories: selectedAccessories,
+                    hue: (i * 45) % 360, // Different color variations
+                    rarity: Math.random() > 0.7 ? 'rare' : 'common'
+                });
+            }
+
+            // Generate each NFT
+            for (let i = 0; i < resultCanvases.length; i++) {
+                const resultCtx = resultCanvases[i].getContext('2d');
+                resultCtx.clearRect(0, 0, 200, 200);
+                
+                const combo = combinations[i];
+                
+                try {
+                    // Draw background with Monad-style gradient
+                    const gradient = resultCtx.createRadialGradient(100, 100, 0, 100, 100, 120);
+                    gradient.addColorStop(0, `hsl(${combo.hue + 240}, 70%, 15%)`);
+                    gradient.addColorStop(0.7, `hsl(${combo.hue + 260}, 60%, 8%)`);
+                    gradient.addColorStop(1, '#0f0820');
+                    resultCtx.fillStyle = gradient;
+                    resultCtx.fillRect(0, 0, 200, 200);
+                    
+                    // Add subtle grid pattern
+                    resultCtx.strokeStyle = `hsla(${combo.hue + 250}, 50%, 30%, 0.1)`;
+                    resultCtx.lineWidth = 1;
+                    for (let x = 0; x < 200; x += 20) {
+                        resultCtx.beginPath();
+                        resultCtx.moveTo(x, 0);
+                        resultCtx.lineTo(x, 200);
+                        resultCtx.stroke();
+                    }
+                    for (let y = 0; y < 200; y += 20) {
+                        resultCtx.beginPath();
+                        resultCtx.moveTo(0, y);
+                        resultCtx.lineTo(200, y);
+                        resultCtx.stroke();
+                    }
+                    
+                    // Load and draw body
+                    const bodyImg = await loadImage(monadBodies[combo.bodyType]);
+                    resultCtx.drawImage(bodyImg, 50, 70, 100, 100);
+                    
+                    // Apply color filter to body based on hue
+                    resultCtx.globalCompositeOperation = 'overlay';
+                    resultCtx.fillStyle = `hsl(${combo.hue + 250}, 70%, 50%)`;
+                    resultCtx.globalAlpha = 0.3;
+                    resultCtx.fillRect(50, 70, 100, 100);
+                    resultCtx.globalCompositeOperation = 'source-over';
+                    resultCtx.globalAlpha = 1;
+                    
+                    // Draw user's face design
+                    resultCtx.save();
+                    resultCtx.beginPath();
+                    resultCtx.arc(100, 120, 35, 0, 2 * Math.PI);
+                    resultCtx.clip();
+                    resultCtx.drawImage(canvas, 65, 85, 70, 70);
+                    resultCtx.restore();
+                    
+                    // Add expression
+                    resultCtx.font = 'bold 16px Space Grotesk';
+                    resultCtx.textAlign = 'center';
+                    resultCtx.fillStyle = combo.expression.color;
+                    resultCtx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+                    resultCtx.shadowBlur = 2;
+                    resultCtx.fillText(combo.expression.eyes, 100, 110);
+                    resultCtx.fillText(combo.expression.mouth, 100, 135);
+                    resultCtx.shadowBlur = 0;
+                    
+                    // Draw accessories
+                    for (const accessory of combo.accessories) {
+                        const accImg = await loadImage(accessory.src);
+                        
+                        switch (accessory.type) {
+                            case 'hat':
+                                resultCtx.drawImage(accImg, 50, 50, 100, 40);
+                                break;
+                            case 'glasses':
+                                resultCtx.drawImage(accImg, 70, 105, 60, 24);
+                                break;
+                            case 'chain':
+                                resultCtx.drawImage(accImg, 50, 150, 100, 40);
+                                break;
+                        }
+                    }
+                    
+                    // Add rarity indicators
+                    if (combo.rarity === 'rare') {
+                        // Add golden glow for rare items
+                        resultCtx.shadowColor = '#ffd700';
+                        resultCtx.shadowBlur = 15;
+                        resultCtx.strokeStyle = '#ffd700';
+                        resultCtx.lineWidth = 2;
+                        resultCtx.strokeRect(2, 2, 196, 196);
+                        resultCtx.shadowBlur = 0;
+                        
+                        // Add rare sparkles
+                        for (let j = 0; j < 5; j++) {
+                            const sparkleX = Math.random() * 180 + 10;
+                            const sparkleY = Math.random() * 180 + 10;
+                            resultCtx.fillStyle = '#ffd700';
+                            resultCtx.font = '12px Arial';
+                            resultCtx.fillText('✨', sparkleX, sparkleY);
+                        }
+                    }
+                    
+                    // Add Monad logo watermark
+                    resultCtx.fillStyle = 'rgba(148, 107, 234, 0.3)';
+                    resultCtx.font = '10px Space Grotesk';
+                    resultCtx.textAlign = 'right';
+                    resultCtx.fillText('MONAD', 190, 190);
+
+                } catch (error) {
+                    console.error(`Error generating NFT ${i + 1}:`, error);
+                    resultCtx.fillStyle = '#946bea';
+                    resultCtx.font = '20px Space Grotesk';
+                    resultCtx.textAlign = 'center';
+                    resultCtx.fillText('🔄', 100, 100);
+                }
+                
+                // Update NFT info
+                const nftInfo = resultCanvases[i].parentElement.querySelector('.nft-info');
+                nftInfo.textContent = `${combo.expression.name.toUpperCase()} MONAD #${i + 1}`;
+                if (combo.rarity === 'rare') {
+                    nftInfo.style.color = '#ffd700';
+                    nftInfo.textContent += ' ✨ RARE';
+                }
+            }
+
+            generateBtn.disabled = false;
+            generateBtn.textContent = 'Generate Monad NFTs';
+        }
+
+        // Create floating background elements
+        function createFloatingElements() {
+            const container = document.querySelector('.floating-elements');
+            for (let i = 0; i < 20; i++) {
+                const element = document.createElement('div');
+                element.className = 'floating-element';
+                element.style.left = Math.random() * 100 + '%';
+                element.style.animationDelay = Math.random() * 8 + 's';
+                element.style.animationDuration = (8 + Math.random() * 4) + 's';
+                container.appendChild(element);
+            }
+        }
+
+        // Initialize
+        createFloatingElements();
+        
+        // Add some initial sparkle
+        setTimeout(() => {
+            generateMonadNFTs();
+        }, 1000);
+    </script>
+</body>
+</html>
